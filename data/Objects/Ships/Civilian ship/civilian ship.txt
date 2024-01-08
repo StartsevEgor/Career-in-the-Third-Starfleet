@@ -1,0 +1,14 @@
+Class - Civilian ship
+Width - 50
+Height - 50
+Mass - 79000000
+Buy price - 1
+Sell price - 1
+Level - 1
+Type - Истребитель
+Energy - 2000000000
+Energy recovery rate - 8777777
+Shield - 1000000000
+Armor - 1000000000
+Standard speed - 400
+Acceleration_time - 6.5
