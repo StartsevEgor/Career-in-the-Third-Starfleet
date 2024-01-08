@@ -37,13 +37,16 @@ class Module(Object):
         self.type = self.data["Type"]
 
 class System:
-    def __init__(self, name, data):
+    def __init__(self, name, objects):
+        self.name = name
+        self.stars = []
+        self.planets = []
+        self.characters = []
 
 class Map:
     def __init__(self):
         self.data = unpacking_txt_to_map(files["map"])
         for system in self.data.keys():
-
 
 
 civilian_ship = Ship("Civilian ship")
