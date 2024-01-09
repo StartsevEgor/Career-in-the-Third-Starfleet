@@ -9,7 +9,7 @@ FPS = 60
 
 
 def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
+    fullname = name
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
         sys.exit()
@@ -55,7 +55,7 @@ class Standart_Sprite(pygame.sprite.Sprite):
 class Cell(Standart_Sprite):
     def __init__(self, lines_color, background_color, width, height, x, y,
                  text_settings=("", None, 50, pygame.Color("black")), *group):
-        super().__init__(width, height, x, y, background_color, *group)
+        super().__init__(width, height, x, y, background_color, group)
         self.lines_color = lines_color
         self.text = text_settings[0]
         self.font = text_settings[1]
@@ -80,7 +80,7 @@ class Cell(Standart_Sprite):
 
 class Border(Standart_Sprite):
     def __init__(self, lines_color, width, height, x, y, *group):
-        super().__init__(width, height, x, y, pygame.Color("black"), *group)
+        super().__init__(width, height, x, y, pygame.Color("black"), group)
         self.lines_color = lines_color
         # self.surface = surface
         self.update()
