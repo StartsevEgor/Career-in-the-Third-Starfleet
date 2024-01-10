@@ -5,10 +5,11 @@ files = {
     "Civilian ship": "data/Objects/Ships/Civilian ship/civilian ship.txt",
     "Civilian ship Image": "data/Objects/Ships/Civilian ship/civilian ship.png"
 }
+all_sprites = pygame.sprite.Group()
 
-
-class Object:
-    def __init__(self, class_):
+class Object(Standart_Sprite):
+    def __init__(self, class_, coordinates):
+        self.x, self.y = coordinates
         self.class_ = class_
         self.data = unpacking_txt(files[class_])
         self.type_ = self.data["Type"]
@@ -18,14 +19,27 @@ class Object:
         self.buy_price = self.data["Buy price"]
         self.sell_price = self.data["Sell price"]
         self.file_with_image = files[self.class_ + " Image"]
+        super().__init__(self.width, self.height, self.x, self.y, all_sprites)
+    # def update(self, new_width=None, new_height=None, new_x=None, new_y=None, new_approximation_factor=None):
+    #     super().update(new_width, new_height, new_x, new_y, new_approximation_factor)
+    #     self.width = new_width if new_width else self.width
+    #     self.height = new_height if new_height else self.height
+    #     self.x = new_x if new_x else self.x
+    #     self.y = new_y if new_y else self.y
+    #     self.image = pygame.transform.scale(self.image, (self.width, self.height))
+    #     self.rect = self.image.get_rect()
+    #     self.rect.x = self.x
+    #     self.rect.y = self.y
+
+
 
     def __str__(self):
         return self.class_
 
 
 class Ship(Object):
-    def __init__(self, class_):
-        super().__init__(class_)
+    def __init__(self, class_, coordinates):
+        super().__init__(class_, coordinates)
         self.level = self.data["Level"]
         self.energy = self.data["Energy"]
         self.energy_recovery_rate = self.data["Energy recovery rate"]
@@ -64,17 +78,16 @@ class Character:
     def __init__(self, name, coordinates):
         self.name = name
         self.coordinates = coordinates
-        self.name_for_file = str(name).lower().replace(" ", "_")
-        self.file_name = f"data/Objects/Characters/{self.name_for_file}/{self.name_for_file}.txt"
+        self.file_name = f"data/Objects/Characters/{self.name}/{self.name}.txt"
         self.data = unpacking_txt(self.file_name)
         self.name = self.data["Name"]
         self.hp = self.data["HP"]
         self.level = self.data["Level"]
         self.items = self.data["Items"]
-        self.main_ship = Ship(self.data["Main ship"])
+        self.main_ship = Ship(self.data["Main ship"], self.coordinates)
         self.data["Ships"].remove(self.data["Main ship"])
-        self.ships = list(map(lambda ship: Ship(ship), self.data["Ships"]))
-        self.ships.append(self.main_ship)
+        # self.ships = list(map(lambda ship: Ship(ship), self.data["Ships"]))
+        # self.ships.append(self.main_ship)
         print(self.main_ship)
 
     def __str__(self):
