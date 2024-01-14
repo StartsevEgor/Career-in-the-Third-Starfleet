@@ -1,5 +1,4 @@
 Name - Character 1
-HP - 100
 Level - 1
 Items:
 Ships:
