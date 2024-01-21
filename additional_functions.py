@@ -36,7 +36,6 @@ def load_image(name, colorkey=None):
         print(f"Файл с изображением '{fullname}' не найден")
     image = pygame.image.load(fullname).convert()
     if colorkey is not None:
-        deleted_pixels = []
         if colorkey == -1:
             deleted_pixels = list(set(tuple(image.get_at((i, 0))) for i in range(image.get_width())))
             for j in deleted_pixels:
@@ -45,7 +44,6 @@ def load_image(name, colorkey=None):
                         if image.get_at((x, y)) == j:
                             image.set_at((x, y), (0, 0, 0, 255))
             image.set_colorkey((0, 0, 0, 255))
-            deleted_pixels = set(deleted_pixels)
     else:
         image = image.convert_alpha()
     return image
@@ -94,7 +92,9 @@ class Standart_Sprite(pygame.sprite.Sprite):
         self.height = new_height if new_height else self.height
         self.image = self.obj.image
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
+        self.image = pygame.transform.rotate(self.image, -self.obj.angle_of_rotation % 360)
         self.rect = self.image.get_rect()
         self.rect.x = self.x
         self.rect.y = self.y
+
 
