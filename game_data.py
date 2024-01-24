@@ -35,6 +35,7 @@ class Ship:
         self.level = settings["level"]
         self.energy = settings["energy"]
         self.energy_recovery_rate = settings["energy_recovery_rate"]
+        self.gamage_energy = 0
         self.shield = settings["shield"]
         self.armor = settings["armor"]
         self.max_speed = settings["max_speed"]
@@ -46,8 +47,15 @@ class Ship:
         self.boost = self.max_speed / self.acceleration_time
         self.brake = -(self.max_speed / self.braking_time)
         self.image = load_image(self.file_with_image, colorkey=-1)
+        self.block = False
+        self.last_dt = 0
 
     def move(self, time, type_="Boost"):
+        if self.block:
+            self.knockout_animation(time)
+            print(self.speed)
+            return
+        self.last_dt = time
         boost = self.brake if type_ == "Brake" else self.boost
         self.speed = self.speed + boost * time if 0 <= self.speed + boost * time <= self.max_speed else (
             0 if self.speed + boost * time < 0 else self.max_speed)
@@ -55,6 +63,17 @@ class Ship:
         self.y_speed = self.speed * cos(radians(self.angle_of_rotation))
         self.x += self.x_speed * time
         self.y -= self.y_speed * time
+
+    def knockout_animation(self, time):
+        boost = self.brake
+        self.speed = self.speed + boost * time if 0 <= self.speed + boost * time <= self.max_speed else (
+            0 if self.speed + boost * time < 0 else self.max_speed)
+        self.x_speed = self.speed * sin(radians((self.angle_of_rotation - 180) % 360))
+        self.y_speed = self.speed * cos(radians((self.angle_of_rotation - 180) % 360))
+        self.x += self.x_speed * time
+        self.y -= self.y_speed * time
+        if self.speed == 0:
+            self.block = False
 
     def rotate(self, time, type_):
         boost = self.rotate_boost if type_ == "Right" or (type_ == "Stop" and self.rotate_speed < 0) else (
@@ -67,6 +86,29 @@ class Ship:
                 -self.max_rotate_speed if self.rotate_speed + boost * time < -self.max_rotate_speed
                 else self.max_rotate_speed)
         self.angle_of_rotation += self.rotate_speed * time
+
+    def take_damage(self, obj):
+        if self.block:
+            return
+        ship_damage = (self.mass * (self.speed ** 2)) / 2
+        ship_damage = ship_damage_x, ship_damage_y = ship_damage * cos(
+            radians(self.angle_of_rotation)), ship_damage * sin(radians(self.angle_of_rotation))
+        obj_damage = (obj.mass * (obj.speed ** 2)) / 2
+        obj_damage = obj_damage_x, obj_damage_y = obj_damage * cos(radians(obj.angle_of_rotation)), obj_damage * sin(
+            radians(obj.angle_of_rotation))
+        full_damage = ((ship_damage_x + obj_damage_x) ** 2 + (ship_damage_y + obj_damage_y) ** 2) ** 0.5 / 2
+        self.deal_damage(full_damage)
+        obj.deal_damage(full_damage)
+
+    def deal_damage(self, damage, rotate=False):
+        if damage > self.shield:
+            self.armor -= damage - self.shield
+            self.shield = 0
+        else:
+            self.shield -= damage
+        if self.speed == 0:
+            self.speed = self.max_speed + self.height
+        self.block = True
 
     def __str__(self):
         return self.name

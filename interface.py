@@ -4,22 +4,6 @@ import os
 from additional_functions import *
 
 
-# def load_image(name, colorkey=None):
-#     fullname = name
-#     if not os.path.isfile(fullname):
-#         print(f"Файл с изображением '{fullname}' не найден")
-#         sys.exit()
-#     image = pygame.image.load(fullname)
-#     if colorkey is not None:
-#         image = image.convert()
-#         if colorkey == -1:
-#             colorkey = image.get_at((0, 0))
-#         image.set_colorkey(colorkey)
-#     else:
-#         image = image.convert_alpha()
-#     return image
-
-
 class Interface_Sprite(pygame.sprite.Sprite):
     def __init__(self, width, height, x, y, background_color=pygame.Color("black"), *group):
         super().__init__(*group)
@@ -47,6 +31,10 @@ class Interface_Sprite(pygame.sprite.Sprite):
         self.rect.height = new_height
         self.update()
 
+    def change_color(self, new_background_color=None):
+        self.background_color = new_background_color if new_background_color else self.background_color
+        self.image.fill(self.background_color)
+
 
 class Cell(Interface_Sprite):
     def __init__(self, lines_color, background_color, width, height, x, y,
@@ -54,16 +42,16 @@ class Cell(Interface_Sprite):
         super().__init__(width, height, x, y, background_color, group)
         self.lines_color = lines_color
         self.file_with_image = image
-        self.obj = text_settings[0] if type(text_settings[0]) != str else None
-        self.text = text_settings[0].name if self.obj else text_settings[0]
+        self.obj = text_settings[0]
+        self.text = str(text_settings[0])
         self.font = text_settings[1]
         self.text_size = text_settings[2]
         self.text_color = text_settings[3]
-        # self.surface = surface
         self.update()
 
     def update(self):
         super().update()
+        self.image.fill(self.background_color)
         font = pygame.font.Font(self.font, self.text_size)
         text = font.render(self.text, True, self.text_color)
         self.height = text.get_height() if text.get_height() > self.height else self.height
@@ -88,28 +76,13 @@ class Cell(Interface_Sprite):
                 y = 1
             image = pygame.transform.scale(image, (image_width - 2, image_height - 2))
             self.image.blit(image, (x, y))
-            print(image, self.image)
         self.image.blit(text, (text_x, text_y))
         pygame.draw.rect(self.image, self.lines_color, (0, 0, self.width, self.height), 1)
-        # self.surface.blit(self.image, (self.x, self.y))
-
-
-class Border(Interface_Sprite):
-    def __init__(self, lines_color, width, height, x, y, *group):
-        super().__init__(width, height, x, y, pygame.Color("black"), group)
-        self.lines_color = lines_color
-        # self.surface = surface
-        self.update()
-
-    def update(self):
-        super().update()
-        pygame.draw.rect(self.image, self.lines_color, (0, 0, self.width, self.height), 1)
-        # self.surface.blit(self.image, (self.x, self.y))
 
 
 class Table(Interface_Sprite):
     def __init__(self, width, height, x, y, data: list, files_with_images, lines_color, background_color, *group,
-                 text_settings=(None, 20, pygame.Color("green")), columns_width=None):
+                 text_settings=(None, 20, pygame.Color("white")), columns_width=None):
         super().__init__(width, height, x, y, background_color, *group)
         self.cell_sprites = pygame.sprite.Group()
         self.horizontal_border_sprites = pygame.sprite.Group()
@@ -117,75 +90,67 @@ class Table(Interface_Sprite):
         self.lines_color = lines_color
         self.background_color = background_color
         self.data = data
+        self.target = None
         self.files_with_images = files_with_images
         self.text_settings = text_settings
         self.make(columns_width)
 
     def make(self, columns_width=None):
+        self.image.fill(self.background_color)
         self.columns_width = columns_width if columns_width else [self.width / len(self.data)] * len(self.data)
         self.row_height = self.height / len(max(self.data, key=lambda x: len(x)))
-        # self.upper_border = Border(self.lines_color, self.width, 1, 0, 0, self.horizontal_border_sprites)
-        # self.right_border = Border(self.lines_color, 1, self.height, self.width, 0,
-        #                            self.vertical_border_sprites)
-        # self.lower_border = Border(self.lines_color, self.width, 1, 0, self.height - 1,
-        #                            self.horizontal_border_sprites)
-        # self.left_border = Border(self.lines_color, 1, self.height, 0, 0, self.vertical_border_sprites)
-        # for i in range(len(self.data) - 1):
-        #     x = sum(self.columns_width[:i + 1])
-        #     Border(self.lines_color, 0, self.height, x, 0, self.vertical_border_sprites)
         self.cells = []
         for col in range(len(self.data)):
-            self.cells.append([])
+            cell_group = []
             for row in range(len(self.data[col])):
-                self.cells.append(Cell(self.lines_color, self.background_color, self.columns_width[col] - 1,
+                cell_group.append(Cell(self.lines_color, self.background_color, self.columns_width[col] - 1,
                                        self.row_height - 1, sum(self.columns_width[:col]), self.row_height * row,
                                        (self.data[col][row],) + self.text_settings, self.files_with_images[col][row],
                                        self.cell_sprites))
-        # self.vertical_border_sprites.draw(self.image)
-        # self.horizontal_border_sprites.draw(self.image)
+            self.cells.append(cell_group)
         self.cell_sprites.draw(self.image)
 
-    # def update_size(self, old_mouse_pos, new_mouse_pos, border, is_vertical):
-    #     super().update()
-    #     if is_vertical:
-    #         pass
-    #     else:
-    #         new_x = self.x
-    #         new_width = self.width
-    #         new_y = new_mouse_pos[1] if border == self.upper_border else self.y
-    #         new_height = self.height + (new_mouse_pos[1] - old_mouse_pos[1])
-    #     add_to_width = (new_width - self.width) / len(self.columns_width)
-    #     super().change(new_width, new_height, new_x, new_y)
-    #     self.columns_width = list(map(lambda x: x + add_to_width, self.columns_width))
-    #     self.row_height = self.height / len(max(self.data, key=lambda x: len(x)))
-    #     self.upper_border.change(self.width, 1, 0, 0)
-    #     self.right_border.change(1, self.height, self.width, 0)
-    #     self.lower_border.change(self.width, 1, 0, self.height - 1)
-    #     self.left_border.change(1, self.height, 0, 0)
-    #     for i in range(len(self.data) - 1):
-    #         x = sum(self.columns_width[:i + 1])
-    #         border = self.vertical_border_sprites.sprites()[2:][i]
-    #         border.change(0, self.height, x, 0)
-    #     for col in range(len(self.data)):
-    #         for row in range(len(self.data[col])):
-    #             cell = self.cell_sprites.sprites()[(col + 1) * (row + 1) - 1]
-    #             cell.change(self.columns_width[col] - 1, self.row_height - 1, sum(self.columns_width[:col]),
-    #                         self.row_height * row)
+    def update(self):
+        self.image.fill(self.background_color)
+        self.cell_sprites.draw(self.image)
+
     def update_data(self, new_data, files_with_images):
+        self.image.fill(self.background_color)
+        if len(new_data) < len(self.data):
+            decrease = len(self.data) - len(new_data)
+            for i in range(decrease):
+                self.cells.remove(self.cells[-1])
+        self.data = new_data
         for col in range(len(self.data)):
             for row in range(len(self.data[col])):
                 cell = self.cells[col][row]
-                cell.text = new_data[col][row]
-                cell.file_with_image = new_data[col][row]
+                cell.x = sum(self.columns_width[:col])
+                cell.y = self.row_height * row
+                cell.image.fill(cell.background_color)
+                cell.text = str(new_data[col][row])
+                cell.file_with_image = files_with_images[col][row]
                 cell.update()
+        self.cell_sprites.draw(self.image)
+
+    def take_aim(self, row):
+        if self.target:
+            for col in range(len(self.cells)):
+                self.cells[col][self.target[1]].change_color(pygame.Color((0, 0, 0)))
+                self.cells[col][self.target[1]].update()
+        self.target = (self.cells[1][row], row)
+        for col in range(len(self.cells)):
+            self.cells[col][row].change_color(pygame.Color((100, 100, 150, 100)))
+            self.cells[col][row].update()
 
     def click(self, pos):
         pos = (pos[0] - self.x, pos[1] - self.y)
-        for cell in self.cell_sprites.sprites():
-            if cell.rect.collidepoint(pos):
-                print(1)
-                return cell
+        for col in range(len(self.cells)):
+            for row in range(len(self.cells[col])):
+                if self.cells[col][row].rect.collidepoint(pos):
+                    self.take_aim(row)
+                    return self.cells[col][row]
         return None
+
 #
 #
 # interface_sprites = pygame.sprite.Group()

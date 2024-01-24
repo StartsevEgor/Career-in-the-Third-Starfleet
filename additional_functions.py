@@ -3,6 +3,18 @@ import sys
 import pygame
 from screeninfo import get_monitors
 
+FPS = 60
+def human_read_format(size):
+    values = ["М", "Км", "Мм"]
+    count = 0
+    while size >= 1000:
+        if count + 1 == 3:
+            break
+        size /= 1000
+        count += 1
+    return f"{round(size)}{values[count]}"
+
+
 def unpacking_txt(file):
     with open(file, "r", encoding="utf8") as text:
         strings = text.readlines()
@@ -47,6 +59,11 @@ def load_image(name, colorkey=None):
     else:
         image = image.convert_alpha()
     return image
+
+
+def reverse_matrix(matrix):
+    new_matrix = [[matrix[j][i] for j in range(len(matrix))] for i in range(len(matrix[0]))]
+    return new_matrix
 
 
 # class AnimatedSprite(pygame.sprite.Sprite):
@@ -96,5 +113,3 @@ class Standart_Sprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = self.x
         self.rect.y = self.y
-
-

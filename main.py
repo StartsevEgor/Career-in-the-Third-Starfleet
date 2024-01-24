@@ -10,17 +10,6 @@ width, height = get_monitors()[0].width, get_monitors()[0].height
 print(width, height)
 
 
-# Изображение не получится загрузить
-# без предварительной инициализации pygame
-
-
-# class Camera:
-#     def __init__(self):
-#         self.main_character = map_.search("Character 1", "character", accurate_search=True)
-#         self.main_ship = self.main_character.main_ship
-#         all_sprites.draw(screen)
-
-# Загрузка карты
 def load_map():
     objects = []
     with open("data/map.txt", "r") as file:
@@ -43,6 +32,8 @@ def load_map():
 def terminate():
     pygame.quit()
     sys.exit()
+
+
 def get_background_size(background):
     if background.obj.image.get_width() > background.obj.image.get_height():
         image_width = width
@@ -55,10 +46,59 @@ def get_background_size(background):
         x = width / 2 - image_width / 2
         y = 0
     return image_width, image_height, x, y
-def make_overview_panel(objects_):
+
+
+def make_overview_panel():
     data = []
-    for object_ in objects_:
-        pass
+    files_with_images = []
+    for object_ in objects:
+        if object_ == player_ship:
+            continue
+        data.append(["", object_, str(object_.speed),
+                     str(human_read_format(
+                         round(((player_ship.x - object_.x) ** 2 + (player_ship.y - object_.y) ** 2) ** 0.5)))])
+        files_with_images.append([object_.file_with_icon_image, None, None, None])
+    columns_width = [30, 150, 40, 50]
+    table = Table(sum(columns_width), 30 * len(data), width - sum(columns_width), 0, reverse_matrix(data),
+                  reverse_matrix(files_with_images), pygame.Color("white"), pygame.Color((0, 0, 0, 255)),
+                  interface_sprites, columns_width=columns_width)
+    return table
+
+
+def update_overview_panel():
+    data = []
+    files_with_images = []
+    for object_ in objects:
+        if object_ == player_ship:
+            continue
+        data.append(["", object_, str(object_.speed),
+                     str(human_read_format(
+                         round(((player_ship.x - object_.x) ** 2 + (player_ship.y - object_.y) ** 2) ** 0.5)))])
+        files_with_images.append([object_.file_with_icon_image, None, None, None])
+    # overview_panel.data = reverse_matrix(data)
+    # overview_panel.files_with_images = reverse_matrix(files_with_images)
+    overview_panel.change(overview_panel.width, 30 * len(data), overview_panel.x, overview_panel.y)
+    # overview_panel.make(overview_panel.columns_width)
+    overview_panel.update_data(reverse_matrix(data), reverse_matrix(files_with_images))
+
+
+def update_speeds_and_distances_in_overview_panel():
+    for i in range(len(overview_panel.data[1])):
+        overview_panel.cells[-2][i].text = str(overview_panel.cells[1][i].obj.speed)
+        overview_panel.cells[-2][i].update()
+        overview_panel.cells[-1][i].text = str(human_read_format(round(((player_ship.x - overview_panel.cells[1][
+            i].obj.x) ** 2 + (player_ship.y - overview_panel.cells[1][i].obj.y) ** 2) ** 0.5)))
+        overview_panel.cells[-1][i].update()
+        overview_panel.update()
+
+
+def collision_check():
+    for i in all_sprites.sprites():
+        new_group = all_sprites.copy()
+        new_group.remove(i)
+        if pygame.sprite.spritecollideany(i, new_group):
+            i.obj.take_damage(pygame.sprite.spritecollideany(i, all_sprites).obj)
+
 
 class Camera:
     def __init__(self):
@@ -95,11 +135,11 @@ class Camera:
 pygame.init()
 size = width, height
 screen = pygame.display.set_mode(size)
-FPS = 60
 clock = pygame.time.Clock()
 main_character_data = unpacking_txt("data/Main character.txt")
 all_sprites = pygame.sprite.Group()
 background_sprites = pygame.sprite.Group()
+interface_sprites = pygame.sprite.Group()
 objects = load_map()
 x = 0
 x1 = 40
@@ -113,6 +153,7 @@ for obj in objects:
     if obj.name == "Player ship":
         player_ship = obj
         break
+overview_panel = make_overview_panel()
 camera = Camera()
 running = True
 while running:
@@ -140,11 +181,15 @@ while running:
             elif event.key == pygame.K_d:
                 d_flag = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 4:
+            if event.button == 1:
+                print(overview_panel.click(pygame.mouse.get_pos()))
+            elif event.button == 4:
                 camera.update(approximation_factor=1.2)
             elif event.button == 5:
                 camera.update(approximation_factor=0.8)
     screen.fill((0, 0, 0))
+    update_speeds_and_distances_in_overview_panel()
+    collision_check()
     pygame.draw.rect(screen, "white", (1, 1, width - 1, height - 1), 1)
     pygame.draw.rect(screen, "white", (1, 1, width // 2, height), 1)
     pygame.draw.rect(screen, "white", (1, 1, width, height // 2), 1)
@@ -162,6 +207,7 @@ while running:
     x += x1
     background_sprites.draw(screen)
     all_sprites.draw(screen)
+    interface_sprites.draw(screen)
     pygame.draw.circle(screen, "white", (x, 12), 10, 1)
     camera.update()
     pygame.display.flip()
