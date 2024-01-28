@@ -1,9 +1,13 @@
 import os
 import sys
+import time
+
 import pygame
 from screeninfo import get_monitors
 
 FPS = 60
+
+
 def human_read_format(size):
     values = ["М", "Км", "Мм"]
     count = 0
@@ -46,7 +50,9 @@ def load_image(name, colorkey=None):
     # если файл не существует, то выходим
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
+    time1 = time.time()
     image = pygame.image.load(fullname).convert()
+    time2 = time.time()
     if colorkey is not None:
         if colorkey == -1:
             deleted_pixels = list(set(tuple(image.get_at((i, 0))) for i in range(image.get_width())))
@@ -90,6 +96,39 @@ def reverse_matrix(matrix):
 #     def update(self):
 #         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
 #         self.image = self.frames[self.cur_frame]
+def cut_sheet(sheet, columns, rows):
+    sheet = load_image(sheet, colorkey=-1)
+    rect = pygame.Rect(0, 0, sheet.get_width() // columns, sheet.get_height() // rows)
+    frames = []
+    for j in range(rows):
+        for i in range(columns):
+            frame_location = (rect.w * i, rect.h * j)
+            frames.append(sheet.subsurface(pygame.Rect(frame_location, rect.size)))
+    return frames
+
+
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_sprites)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        load_image("explosion.png").subsurface()
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
 
 class Standart_Sprite(pygame.sprite.Sprite):
@@ -100,16 +139,26 @@ class Standart_Sprite(pygame.sprite.Sprite):
         self.x = x
         self.y = y
         self.obj = obj
+        self.cursor = 0
+        self.destroy_image_flag = False
         self.change()
 
     def change(self, new_width=None, new_height=None, new_x=None, new_y=None):
+        if self.obj.__class__.__name__ in ["Ship", "Asteroid"] and self.obj.destroy_flag:
+            self.destroy()
+        else:
+            self.image = self.obj.image
         self.x = new_x if new_x else self.x
         self.y = new_y if new_y else self.y
         self.width = new_width if new_width else self.width
         self.height = new_height if new_height else self.height
-        self.image = self.obj.image
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
         self.image = pygame.transform.rotate(self.image, -self.obj.angle_of_rotation % 360)
         self.rect = self.image.get_rect()
         self.rect.x = self.x
         self.rect.y = self.y
+    def destroy(self):
+        self.image = self.obj.destroy_animation[self.cursor]
+        self.cursor += 1
+        if self.cursor >= len(self.obj.destroy_animation):
+            self.destroy_image_flag = True

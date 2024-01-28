@@ -29,6 +29,7 @@ class Interface_Sprite(pygame.sprite.Sprite):
         self.rect.y = new_y
         self.rect.width = new_width
         self.rect.height = new_height
+        self.image = pygame.transform.scale(self.image, (self.width, self.height))
         self.update()
 
     def change_color(self, new_background_color=None):
@@ -64,9 +65,6 @@ class Cell(Interface_Sprite):
             if self.width < self.height:
                 image_width = self.width
                 image_height = image_width * (image.get_height() / image.get_width())
-                print((self.width / image.get_width()), (image_width, image_height),
-                      (image.get_width(), image.get_height()),
-                      (image_width / image.get_width(), image_height / image.get_height()))
                 x = 1
                 y = self.height / 2 - image_height / 2
             else:
@@ -91,13 +89,15 @@ class Table(Interface_Sprite):
         self.background_color = background_color
         self.data = data
         self.target = None
+        self.highlighting = None
         self.files_with_images = files_with_images
         self.text_settings = text_settings
+        self.columns_width = columns_width if columns_width else [self.width / len(self.data)] * len(self.data)
         self.make(columns_width)
 
     def make(self, columns_width=None):
         self.image.fill(self.background_color)
-        self.columns_width = columns_width if columns_width else [self.width / len(self.data)] * len(self.data)
+        self.columns_width = columns_width if columns_width else self.columns_width
         self.row_height = self.height / len(max(self.data, key=lambda x: len(x)))
         self.cells = []
         for col in range(len(self.data)):
@@ -116,38 +116,28 @@ class Table(Interface_Sprite):
 
     def update_data(self, new_data, files_with_images):
         self.image.fill(self.background_color)
-        if len(new_data) < len(self.data):
-            decrease = len(self.data) - len(new_data)
-            for i in range(decrease):
-                self.cells.remove(self.cells[-1])
         self.data = new_data
-        for col in range(len(self.data)):
-            for row in range(len(self.data[col])):
-                cell = self.cells[col][row]
-                cell.x = sum(self.columns_width[:col])
-                cell.y = self.row_height * row
-                cell.image.fill(cell.background_color)
-                cell.text = str(new_data[col][row])
-                cell.file_with_image = files_with_images[col][row]
-                cell.update()
-        self.cell_sprites.draw(self.image)
+        self.files_with_images = files_with_images
+        self.make()
 
-    def take_aim(self, row):
-        if self.target:
+    def take_aim(self, row, get_target=False):
+        if self.highlighting is not None:
             for col in range(len(self.cells)):
-                self.cells[col][self.target[1]].change_color(pygame.Color((0, 0, 0)))
-                self.cells[col][self.target[1]].update()
-        self.target = (self.cells[1][row], row)
+                self.cells[col][self.highlighting].change_color(pygame.Color((0, 0, 0)))
+                self.cells[col][self.highlighting].update()
+        if get_target:
+            self.target = (self.cells[1][row], row)
         for col in range(len(self.cells)):
             self.cells[col][row].change_color(pygame.Color((100, 100, 150, 100)))
             self.cells[col][row].update()
+            self.highlighting = row
 
-    def click(self, pos):
+    def click(self, pos, get_target=False):
         pos = (pos[0] - self.x, pos[1] - self.y)
         for col in range(len(self.cells)):
             for row in range(len(self.cells[col])):
                 if self.cells[col][row].rect.collidepoint(pos):
-                    self.take_aim(row)
+                    self.take_aim(row, get_target)
                     return self.cells[col][row]
         return None
 
