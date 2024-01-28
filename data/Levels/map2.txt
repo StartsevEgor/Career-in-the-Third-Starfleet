@@ -1,0 +1,3 @@
+player ship - 0;0
+civilian ship - -100;0
+civilian ship - 100;0
