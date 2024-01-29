@@ -6,8 +6,8 @@ ships_settings = {
                       "buy_price": 0,
                       "sell_price": 0, "file_with_image": "data/Objects/Ships/Civilian ship/civilian ship.png",
                       "file_with_icon_image":
-                          "C:/Users/start/PycharmProjects/pythonProject1/data/Objects/Mini images/ship.png",
-                      "destroy_animation": ("C:/Users/start/PycharmProjects/pythonProject1/data/explosion.png", 8, 6),
+                          "data/Objects/Mini images/ship.png",
+                      "destroy_animation": ("data/explosion.png", 8, 6),
                       "level": 1, "energy": 2000000000, "energy_recovery_rate": 8777777, "shield": 1000000000,
                       "armor": 1000000000, "max_speed": 400, "acceleration_time": 1.5, "braking_time": 1,
                       "max_rotate_speed": 120, "acceleration_rotate_time": 0.5}
@@ -15,7 +15,7 @@ ships_settings = {
 asteroid_settings = {
     "Small asteroid": {"type": "Мелкий астероид", "width": 20, "height": 20, "mass": 20000,
                        "file_with_image": "data/Objects/Items/small_asteroid.png",
-                       "destroy_animation": ("C:/Users/start/PycharmProjects/pythonProject1/data/explosion.png", 8, 6),
+                       "destroy_animation": ("data/explosion.png", 8, 6),
                        "file_with_icon_image": "data/Objects/Items/small_asteroid.png", "shield": 0, "armor": 500000000,
                        "max_speed": 800, "acceleration_time": 0.75, "braking_time": 2, "max_rotate_speed": 240,
                        "acceleration_rotate_time": 0.25}
@@ -60,6 +60,7 @@ class Ship:
         self.knockout_block = False
         self.destroy_flag = False
         self.block = False
+        self.knockout_angle = 0
 
     def move(self, time, type_="Brake"):
         if self.block:
@@ -77,15 +78,17 @@ class Ship:
         self.y -= self.y_speed * time
 
     def knockout_animation(self, time):
+        print(str(self), self.speed, self.knockout_angle)
         boost = self.brake
         self.speed = self.speed + boost * time if 0 <= self.speed + boost * time <= self.max_speed else (
             0 if self.speed + boost * time < 0 else self.max_speed)
-        self.x_speed = self.speed * sin(radians((self.angle_of_rotation - 180) % 360))
-        self.y_speed = self.speed * cos(radians((self.angle_of_rotation - 180) % 360))
+        self.x_speed = self.speed * sin(radians((self.knockout_angle - 180) % 360))
+        self.y_speed = self.speed * cos(radians((self.knockout_angle - 180) % 360))
         self.x += self.x_speed * time
         self.y -= self.y_speed * time
         if self.speed == 0:
             self.knockout_block = False
+            self.knockout_angle = 0
 
     def rotate(self, time, type_):
         boost = self.rotate_boost if type_ == "Right" or (type_ == "Stop" and self.rotate_speed < 0) else (
@@ -109,10 +112,10 @@ class Ship:
         obj_damage = obj_damage_x, obj_damage_y = obj_damage * cos(radians(obj.angle_of_rotation)), obj_damage * sin(
             radians(obj.angle_of_rotation))
         full_damage = ((ship_damage_x + obj_damage_x) ** 2 + (ship_damage_y + obj_damage_y) ** 2) ** 0.5 / 2
-        self.deal_damage(full_damage + obj.damage_energy)
-        obj.deal_damage(full_damage)
+        self.deal_damage(full_damage + obj.damage_energy, self.speed + obj.speed, self.angle_of_rotation)
+        obj.deal_damage(full_damage, self.speed + obj.speed, (self.angle_of_rotation - 180) % 360)
 
-    def deal_damage(self, damage):
+    def deal_damage(self, damage, knockout_speed, knockout_angle):
         if damage > self.shield:
             self.armor -= damage - self.shield
             self.shield = 0
@@ -121,6 +124,8 @@ class Ship:
         if self.speed == 0:
             self.speed = self.max_speed + self.height
         self.knockout_block = True
+        self.speed = knockout_speed
+        self.knockout_angle = knockout_angle
         if self.armor <= 0:
             self.destroy_flag = True
             self.block = True
@@ -162,6 +167,7 @@ class Asteroid:
         self.knockout_block = False
         self.destroy_flag = False
         self.block = False
+        self.knockout_angle = 0
 
     def move(self, time, type_="Brake"):
         if self.block:
@@ -182,12 +188,13 @@ class Asteroid:
         boost = self.brake
         self.speed = self.speed + boost * time if 0 <= self.speed + boost * time <= self.max_speed else (
             0 if self.speed + boost * time < 0 else self.max_speed)
-        self.x_speed = self.speed * sin(radians((self.angle_of_rotation - 180) % 360))
-        self.y_speed = self.speed * cos(radians((self.angle_of_rotation - 180) % 360))
+        self.x_speed = self.speed * sin(radians((self.knockout_angle - 180) % 360))
+        self.y_speed = self.speed * cos(radians((self.knockout_angle - 180) % 360))
         self.x += self.x_speed * time
         self.y -= self.y_speed * time
         if self.speed == 0:
             self.knockout_block = False
+            self.knockout_angle = 0
 
     def rotate(self, time, type_):
         boost = self.rotate_boost if type_ == "Right" or (type_ == "Stop" and self.rotate_speed < 0) else (
@@ -211,10 +218,10 @@ class Asteroid:
         obj_damage = obj_damage_x, obj_damage_y = obj_damage * cos(radians(obj.angle_of_rotation)), obj_damage * sin(
             radians(obj.angle_of_rotation))
         full_damage = ((ship_damage_x + obj_damage_x) ** 2 + (ship_damage_y + obj_damage_y) ** 2) ** 0.5 / 2
-        self.deal_damage(full_damage + obj.damage_energy)
-        obj.deal_damage(full_damage)
+        self.deal_damage(full_damage + obj.damage_energy, self.speed + obj.speed, self.angle_of_rotation)
+        obj.deal_damage(full_damage, self.speed + obj.speed, (self.angle_of_rotation - 180) % 360)
 
-    def deal_damage(self, damage):
+    def deal_damage(self, damage, knockout_speed, knockout_angle):
         if damage > self.shield:
             self.armor -= damage - self.shield
             self.shield = 0
@@ -223,6 +230,8 @@ class Asteroid:
         if self.speed == 0:
             self.speed = self.max_speed + self.height
         self.knockout_block = True
+        self.speed = knockout_speed
+        self.knockout_angle = knockout_angle
         if self.armor <= 0:
             self.destroy_flag = True
             self.block = True
@@ -233,5 +242,5 @@ class Asteroid:
 
 class Background:
     def __init__(self):
-        self.image = load_image("C:\\Users\\start\\PycharmProjects\\pythonProject1\\data\\background.jpg")
+        self.image = load_image("data\\background.jpg")
         self.angle_of_rotation = 0

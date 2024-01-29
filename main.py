@@ -97,7 +97,7 @@ def collision_check():
     for i in all_sprites.sprites():
         new_group = all_sprites.copy()
         new_group.remove(i)
-        if pygame.sprite.spritecollideany(i, new_group):
+        if pygame.sprite.spritecollideany(i, new_group) and not i.obj.knockout_block:
             i.obj.take_damage(pygame.sprite.spritecollideany(i, new_group).obj)
 
 
@@ -283,7 +283,7 @@ def main(map):
         pygame.draw.rect(screen, "white", (1, 1, width // 2, height), 1)
         pygame.draw.rect(screen, "white", (1, 1, width, height // 2), 1)
         for obj in objects:
-            if obj.knockout_block and obj != player_ship:
+            if obj.knockout_block:
                 obj.move(dt)
         if w_flag:
             player_ship.move(dt, type_="Boost")
@@ -293,7 +293,8 @@ def main(map):
             player_ship.rotate(dt, type_="Left")
         if d_flag and not a_flag:
             player_ship.rotate(dt, type_="Right")
-        if (not d_flag and not a_flag) or (d_flag and a_flag) and player_ship.rotate_speed != 0:
+        if (not d_flag and not a_flag) or (
+                d_flag and a_flag) and player_ship.rotate_speed != 0 and not player_ship.knockout_block:
             player_ship.rotate(dt, type_="Stop")
         background_sprites.draw(screen)
         all_sprites.draw(screen)
