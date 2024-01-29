@@ -100,7 +100,6 @@ def collision_check():
         if pygame.sprite.spritecollideany(i, new_group):
             i.obj.take_damage(pygame.sprite.spritecollideany(i, new_group).obj)
 
-
 def start_screen():
     intro_text = [["СТАРТ", "Справка"]]
     images = [["", ""]]
@@ -127,40 +126,12 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
-
-def end_screen():
-    intro_text = [["Начать заново"]]
-    images = [[""]]
-    columns_width = [400]
-    interface_sprites = pygame.sprite.Group()
-    table = Table(sum(columns_width), 200, width / 2 - sum(columns_width) / 2, height / 2 - 100, intro_text, images,
-                  pygame.Color("green"), pygame.Color("black"), interface_sprites,
-                  text_settings=(None, 50, pygame.Color("green")), columns_width=columns_width)
-    fon = pygame.transform.scale(load_image('data/fon.jpg'), (width, height))
-    screen.blit(fon, (0, 0))
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-                terminate()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    button = table.click(pygame.mouse.get_pos())
-                    if button and button.text == "Начать заново":
-                        screen_with_levels()
-                        return
-        screen.blit(fon, (0, 0))
-        interface_sprites.draw(screen)
-        table.update()
-        pygame.display.flip()
-        clock.tick(FPS)
-
-
 def screen_with_levels():
     levels_count = list(range(len(os.listdir("data/Levels"))))
     intro_text = list(map(lambda x: [str(x + 1)], levels_count))
     images = list(map(lambda x: [""], levels_count))
     interface_sprites = pygame.sprite.Group()
-    table = Table(width - 1, 300, 0, height / 2 - 150, intro_text, images,
+    table = Table(width-1, 300, 0, height / 2 - 150, intro_text, images,
                   pygame.Color("green"), pygame.Color("black"), interface_sprites,
                   text_settings=(None, 100, pygame.Color("green")))
     fon = pygame.transform.scale(load_image('data/fon.jpg'), (width, height))
@@ -180,8 +151,6 @@ def screen_with_levels():
         table.update()
         pygame.display.flip()
         clock.tick(FPS)
-
-
 class Camera:
     def __init__(self):
         self.width = width
@@ -223,7 +192,7 @@ class Camera:
 
 
 def main(map):
-    global objects, main_character_data, all_sprites, interface_sprites, x, x1, player_ship, dt, w_flag, s_flag, \
+    global objects, main_character_data, all_sprites, interface_sprites, x, x1, player_ship, dt, w_flag, s_flag,\
         a_flag, d_flag, overview_panel, camera, running
     main_character_data = unpacking_txt("data/Main character.txt")
     all_sprites = pygame.sprite.Group()
@@ -244,8 +213,6 @@ def main(map):
     camera = Camera()
     running = True
     while running:
-        if player_ship.destroy_flag:
-            running = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -283,7 +250,7 @@ def main(map):
         pygame.draw.rect(screen, "white", (1, 1, width // 2, height), 1)
         pygame.draw.rect(screen, "white", (1, 1, width, height // 2), 1)
         for obj in objects:
-            if obj.knockout_block and obj != player_ship:
+            if obj.knockout_block:
                 obj.move(dt)
         if w_flag:
             player_ship.move(dt, type_="Boost")
@@ -302,7 +269,7 @@ def main(map):
         background_sprites.update()
         pygame.display.flip()
         dt = clock.tick(FPS) / 1000
-    end_screen()
+    terminate()
 
 
 pygame.init()

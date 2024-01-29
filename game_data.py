@@ -1,7 +1,5 @@
-import time
 from math import *
 from additional_functions import *
-from random import randint
 
 ships_settings = {
     "Civilian ship": {"type": "Истребитель", "width": 50, "height": 55, "mass": 67500,
