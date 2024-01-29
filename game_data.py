@@ -164,7 +164,6 @@ class Asteroid:
         self.block = False
 
     def move(self, time, type_="Brake"):
-        print(1, self.x, self.y)
         if self.block:
             return
         if self.knockout_block:
@@ -178,7 +177,6 @@ class Asteroid:
         self.y_speed = self.speed * cos(radians(self.angle_of_rotation))
         self.x += self.x_speed * time
         self.y -= self.y_speed * time
-        print(2, self.x, self.y)
 
     def knockout_animation(self, time):
         boost = self.brake

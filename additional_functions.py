@@ -70,6 +70,7 @@ def reverse_matrix(matrix):
     new_matrix = [[matrix[j][i] for j in range(len(matrix))] for i in range(len(matrix[0]))]
     return new_matrix
 
+
 def cut_sheet(sheet, columns, rows):
     sheet = load_image(sheet, colorkey=-1)
     rect = pygame.Rect(0, 0, sheet.get_width() // columns, sheet.get_height() // rows)
@@ -131,6 +132,7 @@ class Standart_Sprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = self.x
         self.rect.y = self.y
+
     def destroy(self):
         self.image = self.obj.destroy_animation[self.cursor]
         self.cursor += 1
