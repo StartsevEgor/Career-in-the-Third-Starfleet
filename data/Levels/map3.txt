@@ -8,7 +8,7 @@ small asteroid - -121;546
 small asteroid - -278;225
 small asteroid - -167;-992
 small asteroid - -17;-353
-small asteroid - -627;-949
+small asteroid - -627;-1045
 small asteroid - -625;542
 small asteroid - -168;-435
 small asteroid - -146;889

@@ -72,7 +72,6 @@ def reverse_matrix(matrix):
 
 
 def cut_sheet(sheet, columns, rows):
-    sheet = load_image(sheet, colorkey=-1)
     rect = pygame.Rect(0, 0, sheet.get_width() // columns, sheet.get_height() // rows)
     frames = []
     for j in range(rows):
@@ -119,7 +118,7 @@ class Standart_Sprite(pygame.sprite.Sprite):
         self.change()
 
     def change(self, new_width=None, new_height=None, new_x=None, new_y=None):
-        if self.obj.__class__.__name__ in ["Ship", "Asteroid"] and self.obj.destroy_flag:
+        if self.obj.__class__.__name__ in ["Ship", "Asteroid", "Missile"] and self.obj.destroy_flag:
             self.destroy()
         else:
             self.image = self.obj.image

@@ -42,26 +42,24 @@ class Cell(Interface_Sprite):
                  text_settings=("", None, 50, pygame.Color("black")), image=None, *group):
         super().__init__(width, height, x, y, background_color, group)
         self.lines_color = lines_color
-        self.file_with_image = image
+        self.icon_image = image
         self.obj = text_settings[0]
         self.text = str(text_settings[0])
-        self.font = text_settings[1]
-        self.text_size = text_settings[2]
+        self.font = pygame.font.Font(text_settings[1], text_settings[2])
         self.text_color = text_settings[3]
         self.update()
 
     def update(self):
         super().update()
         self.image.fill(self.background_color)
-        font = pygame.font.Font(self.font, self.text_size)
-        text = font.render(self.text, True, self.text_color)
+        text = self.font.render(self.text, True, self.text_color)
         self.height = text.get_height() if text.get_height() > self.height else self.height
         text_x = self.width // 2 - text.get_width() // 2
         text_x = 0 if text_x < 0 else text_x
         text_y = self.height // 2 - text.get_height() // 2
         text_y = 0 if text_y < 0 else text_y
-        if self.file_with_image:
-            image = load_image(self.file_with_image, colorkey=-1)
+        if self.icon_image:
+            image = self.icon_image
             if self.width < self.height:
                 image_width = self.width
                 image_height = image_width * (image.get_height() / image.get_width())
@@ -79,7 +77,7 @@ class Cell(Interface_Sprite):
 
 
 class Table(Interface_Sprite):
-    def __init__(self, width, height, x, y, data: list, files_with_images, lines_color, background_color, *group,
+    def __init__(self, width, height, x, y, data: list, images, lines_color, background_color, *group,
                  text_settings=(None, 20, pygame.Color("white")), columns_width=None):
         super().__init__(width, height, x, y, background_color, *group)
         self.cell_sprites = pygame.sprite.Group()
@@ -90,7 +88,7 @@ class Table(Interface_Sprite):
         self.data = data
         self.target = None
         self.highlighting = None
-        self.files_with_images = files_with_images
+        self.images = images
         self.text_settings = text_settings
         self.columns_width = columns_width if columns_width else [self.width / len(self.data)] * len(self.data)
         self.make(columns_width)
@@ -105,7 +103,7 @@ class Table(Interface_Sprite):
             for row in range(len(self.data[col])):
                 cell_group.append(Cell(self.lines_color, self.background_color, self.columns_width[col] - 1,
                                        self.row_height - 1, sum(self.columns_width[:col]), self.row_height * row,
-                                       (self.data[col][row],) + self.text_settings, self.files_with_images[col][row],
+                                       (self.data[col][row],) + self.text_settings, self.images[col][row],
                                        self.cell_sprites))
             self.cells.append(cell_group)
         self.cell_sprites.draw(self.image)
@@ -114,10 +112,10 @@ class Table(Interface_Sprite):
         self.image.fill(self.background_color)
         self.cell_sprites.draw(self.image)
 
-    def update_data(self, new_data, files_with_images):
+    def update_data(self, new_data, images):
         self.image.fill(self.background_color)
         self.data = new_data
-        self.files_with_images = files_with_images
+        self.images = images
         self.make()
 
     def take_aim(self, row, get_target=False):

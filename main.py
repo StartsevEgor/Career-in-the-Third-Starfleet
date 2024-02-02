@@ -1,12 +1,17 @@
 import os
 import sys
+import time
+
 import pygame
 from screeninfo import get_monitors
+
+pygame.init()
+width, height = get_monitors()[0].width, get_monitors()[0].height
+size = width, height
+screen = pygame.display.set_mode(size)
 from game_data import *
 from interface import *
 import additional_functions
-
-width, height = get_monitors()[0].width, get_monitors()[0].height
 
 
 def load_map(file):
@@ -21,11 +26,11 @@ def load_map(file):
 
             # Создание объекта на основе его имени
             if obj_name == "player ship":
-                obj = Ship("Player ship", obj_x, obj_y, ships_settings[main_character_data["Main ship"]])
+                obj = Ship("Корабль игрока", obj_x, obj_y, ships_settings[main_character_data["Main ship"]])
             elif obj_name == "civilian ship":
-                obj = Ship("Civilian ship", obj_x, obj_y, ships_settings["Civilian ship"])
+                obj = Ship("Гражданский корабль", obj_x, obj_y, ships_settings["Civilian ship"])
             elif obj_name == "small asteroid":
-                obj = Asteroid("Small asteroid", obj_x, obj_y, asteroid_settings["Small asteroid"])
+                obj = Asteroid("Мелкий астероид", obj_x, obj_y, asteroid_settings["Small asteroid"])
             objects.append(obj)
     return objects
 
@@ -51,46 +56,56 @@ def get_background_size(background):
 
 def make_overview_panel():
     data = []
-    files_with_images = []
+    images = []
     for object_ in objects:
-        if object_ == player_ship:
+        if object_ == player_ship or object_.__class__.__name__ == "Missile":
             continue
         data.append(["", object_, str(object_.speed),
                      str(human_read_format(
                          round(((player_ship.x - object_.x) ** 2 + (player_ship.y - object_.y) ** 2) ** 0.5)))])
-        files_with_images.append([object_.file_with_icon_image, None, None, None])
+        images.append([object_.icon_image, None, None, None])
     columns_width = [30, 150, 40, 50]
     table = Table(sum(columns_width), 30 * len(data), width - sum(columns_width), 0, reverse_matrix(data),
-                  reverse_matrix(files_with_images), pygame.Color("white"), pygame.Color((0, 0, 0, 255)),
+                  reverse_matrix(images), pygame.Color("white"), pygame.Color((0, 0, 0, 255)),
                   interface_sprites, columns_width=columns_width)
     return table
 
 
 def update_overview_panel():
     data = []
-    files_with_images = []
+    images = []
     for object_ in objects:
-        if object_ == player_ship:
+        if object_ == player_ship or object_.__class__.__name__ == "Missile":
             continue
         data.append(["", object_, str(object_.speed),
                      str(human_read_format(
                          round(((player_ship.x - object_.x) ** 2 + (player_ship.y - object_.y) ** 2) ** 0.5)))])
-        files_with_images.append([object_.file_with_icon_image, None, None, None])
+        images.append([object_.icon_image, None, None, None])
     # overview_panel.data = reverse_matrix(data)
     # overview_panel.files_with_images = reverse_matrix(files_with_images)
     # overview_panel.make(overview_panel.columns_width)
     overview_panel.change(overview_panel.width, 30 * len(data), overview_panel.x, overview_panel.y)
-    overview_panel.update_data(reverse_matrix(data), reverse_matrix(files_with_images))
+    overview_panel.update_data(reverse_matrix(data), reverse_matrix(images))
 
 
 def update_speeds_and_distances_in_overview_panel():
     for i in range(len(overview_panel.data[0])):
-        overview_panel.cells[-2][i].text = str(overview_panel.cells[1][i].obj.speed)
-        overview_panel.cells[-2][i].update()
-        overview_panel.cells[-1][i].text = str(human_read_format(round(((player_ship.x - overview_panel.cells[1][
-            i].obj.x) ** 2 + (player_ship.y - overview_panel.cells[1][i].obj.y) ** 2) ** 0.5)))
-        overview_panel.cells[-1][i].update()
-        overview_panel.update()
+        time1 = time.time()
+        if overview_panel.cells[-2][i].text != str(overview_panel.cells[1][i].obj.speed):
+            overview_panel.cells[-2][i].text = str(overview_panel.cells[1][i].obj.speed)
+            overview_panel.cells[-2][i].update()
+        time2 = time.time()
+        if overview_panel.cells[-1][i].text != str(human_read_format(round(((player_ship.x - overview_panel.cells[1][
+            i].obj.x) ** 2 + (player_ship.y - overview_panel.cells[1][i].obj.y) ** 2) ** 0.5))):
+            overview_panel.cells[-1][i].text = str(human_read_format(round(((player_ship.x - overview_panel.cells[1][
+                i].obj.x) ** 2 + (player_ship.y - overview_panel.cells[1][i].obj.y) ** 2) ** 0.5)))
+            overview_panel.cells[-1][i].update()
+    overview_panel.update()
+
+
+def check_ships():
+    flag = any(list(filter(lambda x: x.__class__.__name__ == "Ship" and x != player_ship, objects)))
+    return flag
 
 
 def collision_check():
@@ -128,8 +143,8 @@ def start_screen():
         clock.tick(FPS)
 
 
-def end_screen():
-    intro_text = [["Начать заново"]]
+def end_screen(text="Начать заново"):
+    intro_text = [[text]]
     images = [[""]]
     columns_width = [400]
     interface_sprites = pygame.sprite.Group()
@@ -145,7 +160,7 @@ def end_screen():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     button = table.click(pygame.mouse.get_pos())
-                    if button and button.text == "Начать заново":
+                    if button and button.text == text:
                         screen_with_levels()
                         return
         screen.blit(fon, (0, 0))
@@ -184,6 +199,7 @@ def screen_with_levels():
 
 class Camera:
     def __init__(self):
+        global player_ship_sprite
         self.width = width
         self.height = height
         self.x = player_ship.x - self.width / 2
@@ -193,7 +209,11 @@ class Camera:
             obj_sprite_height = height * (obj.height / self.height)
             obj_sprite_x = (obj.x - self.x - obj_sprite_width / 2) / self.width * width
             obj_sprite_y = (obj.y - self.y - obj_sprite_height / 2) / self.height * height
-            Standart_Sprite(obj_sprite_width, obj_sprite_height, obj_sprite_x, obj_sprite_y, obj, all_sprites)
+            if obj == player_ship:
+                player_ship_sprite = Standart_Sprite(obj_sprite_width, obj_sprite_height, obj_sprite_x, obj_sprite_y,
+                                                     obj, all_sprites)
+            else:
+                Standart_Sprite(obj_sprite_width, obj_sprite_height, obj_sprite_x, obj_sprite_y, obj, all_sprites)
 
     def update(self, approximation_factor=1):
         global overview_panel
@@ -217,9 +237,18 @@ class Camera:
             if sprite.destroy_image_flag:
                 delete_sprites.append(sprite)
                 objects.remove(sprite.obj)
+                if not check_ships():
+                    end_screen("ВЫ ВЫИГРАЛИ!")
         if delete_sprites:
             all_sprites.remove(delete_sprites)
             update_overview_panel()
+
+    def add_object(self, obj):
+        obj_sprite_width = width * (obj.width / self.width)
+        obj_sprite_height = height * (obj.height / self.height)
+        obj_sprite_x = (obj.x - self.x - obj_sprite_width / 2) / self.width * width
+        obj_sprite_y = (obj.y - self.y - obj_sprite_height / 2) / self.height * height
+        Standart_Sprite(obj_sprite_width, obj_sprite_height, obj_sprite_x, obj_sprite_y, obj, all_sprites)
 
 
 def main(map):
@@ -237,7 +266,7 @@ def main(map):
     size = get_background_size(background)
     background.change(new_width=size[0], new_height=size[1], new_x=size[2], new_y=size[3])
     for obj in objects:
-        if obj.name == "Player ship":
+        if obj.name == "Корабль игрока":
             player_ship = obj
             break
     overview_panel = make_overview_panel()
@@ -271,7 +300,16 @@ def main(map):
                     d_flag = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    print(overview_panel.click(pygame.mouse.get_pos(), get_target=True))
+                    if not overview_panel.click(pygame.mouse.get_pos(), get_target=True):
+                        pos = pygame.mouse.get_pos()
+                        angle = degrees(atan2((pos[1] - player_ship_sprite.y), (pos[0] - player_ship_sprite.x)))
+                        angle = (angle + 90) % 360
+                        laser = Missile(player_ship, "Лазерный выстрел", player_ship.x, player_ship.y, angle,
+                                        missile_settings["Laser"])
+                        laser.x -= laser.width / 2
+                        laser.y -= laser.height / 2
+                        objects.append(laser)
+                        camera.add_object(laser)
                 elif event.button == 4:
                     camera.update(approximation_factor=1.2)
                 elif event.button == 5:
@@ -279,11 +317,8 @@ def main(map):
         screen.fill((0, 0, 0))
         update_speeds_and_distances_in_overview_panel()
         collision_check()
-        pygame.draw.rect(screen, "white", (1, 1, width - 1, height - 1), 1)
-        pygame.draw.rect(screen, "white", (1, 1, width // 2, height), 1)
-        pygame.draw.rect(screen, "white", (1, 1, width, height // 2), 1)
         for obj in objects:
-            if obj.knockout_block:
+            if obj != player_ship:
                 obj.move(dt)
         if w_flag:
             player_ship.move(dt, type_="Boost")
@@ -306,8 +341,5 @@ def main(map):
     end_screen()
 
 
-pygame.init()
-size = width, height
-screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 start_screen()
